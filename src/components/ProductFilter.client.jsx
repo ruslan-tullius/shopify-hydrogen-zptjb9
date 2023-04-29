@@ -1,17 +1,19 @@
 import {Heading} from '~/components';
-import {useUrl, useNavigate} from '@shopify/hydrogen';
+import {useUrl} from '@shopify/hydrogen';
+import {useNavigate} from '@shopify/hydrogen/client';
 import {DropdownSelect} from './elements/DropdownSelect';
+import {useMemo} from 'react';
 
 function PriceFilter() {
   const {pathname, searchParams} = useUrl();
   const navigate = useNavigate();
 
-  const changeMinPrice = (event) => {
-    searchParams.set('min_price', event.target.value);
-    navigate(`${pathname}?${searchParams.toString()}`);
-  };
-  const changeMaxPrice = (event) => {
-    searchParams.set('max_price', event.target.value);
+  const changePrice = (value, type) => {
+    if (value) {
+      searchParams.set(type, value);
+    } else {
+      searchParams.delete(type);
+    }
     navigate(`${pathname}?${searchParams.toString()}`);
   };
 
@@ -31,7 +33,7 @@ function PriceFilter() {
           type="number"
           defaultValue={searchParams.get('min_price')}
           placeholder="$"
-          onChange={changeMinPrice}
+          onChange={(e) => changePrice(e.target.value, 'min_price')}
         />
       </div>
       <div>
@@ -48,13 +50,13 @@ function PriceFilter() {
           type="number"
           defaultValue={searchParams.get('max_price')}
           placeholder="$"
-          onChange={changeMaxPrice}
+          onChange={(e) => changePrice(e.target.value, 'max_price')}
         />
       </div>
     </div>
   );
 }
-function SelectFilter({label, values}) {
+function SelectFilter({label, values, filterValues}) {
   const {pathname, searchParams} = useUrl();
   const navigate = useNavigate();
   const lowerLabel = label.toLowerCase().replace(/ /g, '_');
@@ -86,8 +88,13 @@ function SelectFilter({label, values}) {
       >
         {label}
       </label>
-
-
+      <DropdownSelect
+        options={values}
+        label={label}
+        lowerLabel={lowerLabel}
+        values={filterValues[lowerLabel]}
+        changeSelect={changeSelect}
+      />
     </div>
   );
 }
@@ -100,18 +107,37 @@ export function ProductFilter({collection}) {
       'filter.v.option.color',
     ].includes(item.id),
   );
+  const {searchParams} = useUrl();
+  const filterValues = useMemo(() => {
+    const values = {
+      product_type: [],
+      color: [],
+    };
+    for (const filter of searchParams.entries()) {
+      if (filter[0] === 'product_type') {
+        values.product_type.push(filter[1]);
+      }
+
+      if (filter[0] === 'color') {
+        values.color.push(filter[1]);
+      }
+    }
+    return values;
+  }, [collection]);
 
   return (
-    <nav className="p-12 w-full">
+    <nav className="pt-6 pb-6 w-full">
       <Heading as="h4" size="lead" className="pb-4">
         Filter By
       </Heading>
       <div className="flex flex-row items-center">
-        <div className="grid-flow-row grid gap-2 gap-y-6 md:gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid-flow-row grid gap-1 gap-y-6 sm:gap-2 md:gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filters.map((filter) => (
             <div key={filter.id}>
               {filter.type === 'PRICE_RANGE' && <PriceFilter {...filter} />}
-              {filter.type === 'LIST' && <SelectFilter {...filter} />}
+              {filter.type === 'LIST' && (
+                <SelectFilter {...filter} filterValues={filterValues} />
+              )}
             </div>
           ))}
         </div>

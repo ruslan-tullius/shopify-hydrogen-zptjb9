@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useMemo} from 'react';
 import {
   gql,
   Seo,
@@ -6,6 +6,7 @@ import {
   useServerAnalytics,
   useLocalization,
   useShopQuery,
+  useUrl,
 } from '@shopify/hydrogen';
 
 import { PRODUCT_CARD_FRAGMENT } from '~/lib/fragments';
@@ -14,14 +15,16 @@ import { NotFound, Layout } from '~/components/index.server';
 
 const pageBy = 48;
 
-export default function Collection({params, request}) {
-  const {searchParams} = new URL(request.url);
+export default function Collection({params}) {
+  const {searchParams} = useUrl();
+
 
   const {handle} = params;
   const {
     language: {isoCode: language},
     country: {isoCode: country},
   } = useLocalization();
+
   const filters = [];
 
   if (searchParams.has('min_price') || searchParams.has('max_price')) {
@@ -37,16 +40,18 @@ export default function Collection({params, request}) {
     });
   }
 
-  if (searchParams.has('product_type')) {
-    filters.push({
-      productType: searchParams.get('product_type'),
-    });
-  }
+  for (const filter of searchParams.entries()) {
+    if (filter[0] === 'product_type') {
+      filters.push({
+        productType: filter[1],
+      });
+    }
 
-  if (searchParams.has('color')) {
-    filters.push({
-      variantOption: {name: 'color', value: searchParams.get('color')},
-    });
+    if (filter[0] === 'color') {
+      filters.push({
+        variantOption: {name: 'color', value: filter[1]},
+      });
+    }
   }
 
   const {
@@ -62,7 +67,8 @@ export default function Collection({params, request}) {
     },
     preload: true,
   });
-
+  console.log('filters', filters)
+  console.log('collection.products.length', collection.products.nodes.length)
   if (!collection) {
     return <NotFound type="collection" />;
   }

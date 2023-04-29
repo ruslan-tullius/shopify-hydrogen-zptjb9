@@ -1,8 +1,14 @@
 import React, {useState, useRef, useEffect} from 'react';
 
-export function DropdownSelect({options, lowerLabel, changeSelect}) {
+export function DropdownSelect({
+  options,
+  label,
+  lowerLabel,
+  values,
+  changeSelect,
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState(values);
 
   const dropdownRef = useRef(null);
 
@@ -34,9 +40,12 @@ export function DropdownSelect({options, lowerLabel, changeSelect}) {
   }, []);
 
   return (
-    <div className="relative inline-block" ref={dropdownRef}>
-      <button className="flex items-center" onClick={handleToggleDropdown}>
-        <span>{lowerLabel}</span>
+    <div className="relative inline-block w-full" ref={dropdownRef}>
+      <button
+        className="flex items-center justify-between w-full border rounded-lg p-2 cursor-pointer border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 bg-gray-700"
+        onClick={handleToggleDropdown}
+      >
+        <span>Choose {label}</span>
         <svg
           className={`fill-current h-4 w-4 ${
             isOpen ? 'transform rotate-180' : ''
@@ -61,7 +70,7 @@ export function DropdownSelect({options, lowerLabel, changeSelect}) {
                 data-filter-type={lowerLabel}
                 checked={selectedOptions.includes(option.label)}
                 onChange={(event) => handleOptionClick(event, option.label)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+                className="w-4 h-4 cursor-pointer text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
               />
               <label
                 htmlFor={`option-${option.label}`}
