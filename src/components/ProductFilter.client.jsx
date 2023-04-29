@@ -2,20 +2,32 @@ import {Heading} from '~/components';
 import {useUrl} from '@shopify/hydrogen';
 import {useNavigate} from '@shopify/hydrogen/client';
 import {DropdownSelect} from './elements/DropdownSelect';
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
+import {useDebounce} from "react-use";
 
 function PriceFilter() {
   const {pathname, searchParams} = useUrl();
   const navigate = useNavigate();
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
 
-  const changePrice = (value, type) => {
-    if (value) {
-      searchParams.set(type, value);
-    } else {
-      searchParams.delete(type);
-    }
-    navigate(`${pathname}?${searchParams.toString()}`);
-  };
+  useDebounce(
+    () => {
+      if (minPrice) {
+        searchParams.set('min_price', minPrice);
+      } else {
+        searchParams.delete('min_price');
+      }
+      if (maxPrice) {
+        searchParams.set('max_price', maxPrice);
+      } else {
+        searchParams.delete('max_price');
+      }
+      navigate(`${pathname}?${searchParams.toString()}`);
+    },
+    400,
+    [minPrice, maxPrice],
+  );
 
   return (
     <div className="grid-flow-row grid gap-2 gap-y-2 md:gap-2 lg:gap-6 grid-cols-2">
@@ -31,9 +43,9 @@ function PriceFilter() {
           name="minPrice"
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           type="number"
-          defaultValue={searchParams.get('min_price')}
+          value={minPrice}
           placeholder="$"
-          onChange={(e) => changePrice(e.target.value, 'min_price')}
+          onChange={(e) => setMinPrice(e.target.value)}
         />
       </div>
       <div>
@@ -48,9 +60,9 @@ function PriceFilter() {
           name="maxPrice"
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           type="number"
-          defaultValue={searchParams.get('max_price')}
+          value={maxPrice}
           placeholder="$"
-          onChange={(e) => changePrice(e.target.value, 'max_price')}
+          onChange={(e) => setMaxPrice(e.target.value)}
         />
       </div>
     </div>
@@ -131,7 +143,7 @@ export function ProductFilter({collection}) {
         Filter By
       </Heading>
       <div className="flex flex-row items-center">
-        <div className="grid-flow-row grid gap-1 gap-y-6 sm:gap-2 md:gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid-flow-row grid gap-2 gap-y-6 sm:gap-2 md:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filters.map((filter) => (
             <div key={filter.id}>
               {filter.type === 'PRICE_RANGE' && <PriceFilter {...filter} />}

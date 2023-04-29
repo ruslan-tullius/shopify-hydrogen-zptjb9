@@ -1,4 +1,4 @@
-import {Suspense, useMemo} from 'react';
+import {Suspense} from 'react';
 import {
   gql,
   Seo,
@@ -17,7 +17,6 @@ const pageBy = 48;
 
 export default function Collection({params}) {
   const {searchParams} = useUrl();
-
 
   const {handle} = params;
   const {
@@ -67,8 +66,7 @@ export default function Collection({params}) {
     },
     preload: true,
   });
-  console.log('filters', filters)
-  console.log('collection.products.length', collection.products.nodes.length)
+
   if (!collection) {
     return <NotFound type="collection" />;
   }
