@@ -6,5 +6,6 @@ export * from './global/index';
 export * from './product/index';
 export * from './sections/index';
 export {CountrySelector} from './CountrySelector.client';
+export {ProductFilter} from './ProductFilter.client';
 export {CustomFont} from './CustomFont.client';
 export {HeaderFallback} from './HeaderFallback';

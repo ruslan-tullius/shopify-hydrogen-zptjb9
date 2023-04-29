@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import {Suspense} from 'react';
 import {
   gql,
   Seo,
@@ -9,27 +9,54 @@ import {
 } from '@shopify/hydrogen';
 
 import { PRODUCT_CARD_FRAGMENT } from '~/lib/fragments';
-import { PageHeader, ProductGrid, Section, Text } from '~/components';
+import { PageHeader, ProductGrid, Section, Text, ProductFilter } from '~/components';
 import { NotFound, Layout } from '~/components/index.server';
 
 const pageBy = 48;
 
-export default function Collection({ params }) {
-  const { handle } = params;
+export default function Collection({params, request}) {
+  const {searchParams} = new URL(request.url);
+
+  const {handle} = params;
   const {
-    language: { isoCode: language },
-    country: { isoCode: country },
+    language: {isoCode: language},
+    country: {isoCode: country},
   } = useLocalization();
   const filters = [];
-  console.log(params);
+
+  if (searchParams.has('min_price') || searchParams.has('max_price')) {
+    const price = {};
+    if (searchParams.has('min_price')) {
+      price.min = Number(searchParams.get('min_price')) || 0;
+    }
+    if (searchParams.has('max_price')) {
+      price.max = Number(searchParams.get('max_price')) || 0;
+    }
+    filters.push({
+      price,
+    });
+  }
+
+  if (searchParams.has('product_type')) {
+    filters.push({
+      productType: searchParams.get('product_type'),
+    });
+  }
+
+  if (searchParams.has('color')) {
+    filters.push({
+      variantOption: {name: 'color', value: searchParams.get('color')},
+    });
+  }
 
   const {
-    data: { collection },
+    data: {collection},
   } = useShopQuery({
     query: COLLECTION_QUERY,
     variables: {
       handle,
       language,
+      filters,
       country,
       pageBy,
     },
@@ -64,6 +91,7 @@ export default function Collection({ params }) {
         )}
       </PageHeader>
       <Section>
+        <ProductFilter collection={collection} />
         <ProductGrid
           key={collection.id}
           collection={collection}
@@ -94,7 +122,6 @@ export async function api(request, { params, queryShop }) {
     variables: {
       handle,
       cursor,
-      filters,
       pageBy,
       country,
     },
@@ -109,6 +136,7 @@ const COLLECTION_QUERY = gql`
     $language: LanguageCode
     $pageBy: Int!
     $cursor: String
+    $filters: [ProductFilter!]
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -128,7 +156,7 @@ const COLLECTION_QUERY = gql`
       products(first: $pageBy, after: $cursor, filters: $filters) {
         nodes {
           ...ProductCard
-        } 
+        }
         filters {
           id
           label
